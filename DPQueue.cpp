@@ -86,15 +86,18 @@ namespace CS3358_FA2024_A7
 
    // CONSTRUCTORS AND DESTRUCTOR
 
-   p_queue::p_queue(size_type initial_capacity): heap(0), capacity(initial_capacity), used(0)
+   p_queue::p_queue(size_type initial_capacity): capacity(initial_capacity), used(0)
    {
+      heap = new ItemType[capacity];
       // capacity = initial_capacity;
       // cerr << "p_queue() not implemented yet" << endl;
    }
 
    p_queue::p_queue(const p_queue& src): capacity(src.capacity), used(src.used)
    {
-      heap = src.heap;
+      heap = new ItemType[capacity];
+      for(size_type i = 0; i < used; i++)
+         heap[i] = src.heap[i];
       // cerr << "p_queue(const p_queue&) not implemented yet" << endl;
    }
 
@@ -120,43 +123,48 @@ namespace CS3358_FA2024_A7
 
    void p_queue::push(const value_type& entry, size_type priority)
    {
-      // already full
       if(used == capacity)
-         return;
+         resize(capacity*2+1);
 
+      heap[used].data = entry;
+      heap[used].priority = priority;
+      
+      size_type index = used;
+      used++;
 
-      ItemType* newNode;
-      newNode->data = entry;
-      newNode->priority = priority;
-
-      // if heap empty
-      if(heap == 0)
+      while(index > 0 && heap[index].priority > parent_priority(index))
       {
-         heap = newNode;
-         used++;
-         return;
+         swap_with_parent(index);
+         index = parent_index(index);
       }
-
-      // if heap not empty
-      if(heap != 0) 
-      {
-         heap[used] = *newNode;
-         // if node we just added has higher priority than its parent
-         if( heap[used].priority > parent_priority(i))
-
-         used++;
-         return;
-      }
-      // cerr << "push(const value_type&, size_type) not implemented yet" << endl;
    }
 
    void p_queue::pop()
    {
       assert(used > 0);
 
+      if(used == 1)
+      {
+         used--;
+         return;
+      }  
 
-
+      heap[0] = heap[used-1];
       used--;
+
+      size_type index = 0;
+      while(!is_leaf(index))
+      {
+         size_type bc_index = big_child_index(index);
+         if(heap[index].priority >= heap[bc_index].priority)
+            break;
+         
+         ItemType temp = heap[index];
+         heap[index] = heap[bc_index];
+         heap[bc_index] = temp;
+         index = bc_index;
+      }
+
       // cerr << "pop() not implemented yet" << endl;
    }
 
@@ -226,16 +234,8 @@ namespace CS3358_FA2024_A7
    // Post: If the item at heap[i] has no children, true has been
    //       returned, otherwise false has been returned.
    {
-      assert (i < used);
-
-      size_type left = 2 * i + 1;
-      size_type right = 2 * i + 2;
-
-      if( left >= used && right >= used)
-         return true;
-
-      // cerr << "is_leaf(size_type) not implemented yet" << endl;
-      return false; // dummy return value
+      assert(i < used);
+      return (2 * i + 1 >= used);
    }
 
    p_queue::size_type
