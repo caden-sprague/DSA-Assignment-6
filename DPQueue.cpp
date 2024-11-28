@@ -86,57 +86,106 @@ namespace CS3358_FA2024_A7
 
    // CONSTRUCTORS AND DESTRUCTOR
 
-   p_queue::p_queue(size_type initial_capacity): used(0), heap(0)
+   p_queue::p_queue(size_type initial_capacity): heap(0), capacity(initial_capacity), used(0)
    {
-      capacity = initial_capacity;
+      // capacity = initial_capacity;
       // cerr << "p_queue() not implemented yet" << endl;
    }
 
-   p_queue::p_queue(const p_queue& src)
+   p_queue::p_queue(const p_queue& src): capacity(src.capacity), used(src.used)
    {
-      cerr << "p_queue(const p_queue&) not implemented yet" << endl;
+      heap = src.heap;
+      // cerr << "p_queue(const p_queue&) not implemented yet" << endl;
    }
 
    p_queue::~p_queue()
    {
-      cerr << "~p_queue() not implemented yet" << endl;
+      delete [] heap;
+      heap = 0;
+      // cerr << "~p_queue() not implemented yet" << endl;
    }
 
    // MODIFICATION MEMBER FUNCTIONS
    p_queue& p_queue::operator=(const p_queue& rhs)
    {
-      cerr << "operator=(const p_queue&) not implemented yet" << endl;
+      capacity = rhs.capacity;
+      used = rhs.used;
+
+      delete [] heap;
+      heap = rhs.heap;
+
+      // cerr << "operator=(const p_queue&) not implemented yet" << endl;
       return *this;
    }
 
    void p_queue::push(const value_type& entry, size_type priority)
    {
-      cerr << "push(const value_type&, size_type) not implemented yet" << endl;
+      // already full
+      if(used == capacity)
+         return;
+
+
+      ItemType* newNode;
+      newNode->data = entry;
+      newNode->priority = priority;
+
+      // if heap empty
+      if(heap == 0)
+      {
+         heap = newNode;
+         used++;
+         return;
+      }
+
+      // if heap not empty
+      if(heap != 0) 
+      {
+         heap[used] = *newNode;
+         // if node we just added has higher priority than its parent
+         if( heap[used].priority > parent_priority(i))
+
+         used++;
+         return;
+      }
+      // cerr << "push(const value_type&, size_type) not implemented yet" << endl;
    }
 
    void p_queue::pop()
    {
-      cerr << "pop() not implemented yet" << endl;
+      assert(used > 0);
+
+
+
+      used--;
+      // cerr << "pop() not implemented yet" << endl;
    }
 
    // CONSTANT MEMBER FUNCTIONS
 
    p_queue::size_type p_queue::size() const
    {
-      cerr << "size() not implemented yet" << endl;
-      return 0; // dummy return value
+      return used;
+
+      // cerr << "size() not implemented yet" << endl;
+      // return 0; // dummy return value
    }
 
    bool p_queue::empty() const
    {
-      cerr << "empty() not implemented yet" << endl;
-      return false; // dummy return value
+      return used == 0;
+
+      // cerr << "empty() not implemented yet" << endl;
+      // return false; // dummy return value
    }
 
    p_queue::value_type p_queue::front() const
    {
-      cerr << "front() not implemented yet" << endl;
-      return value_type(); // dummy return value
+      assert(used > 0);
+
+      return heap->data;
+
+   //    cerr << "front() not implemented yet" << endl;
+   //    return value_type(); // dummy return value
    }
 
    // PRIVATE HELPER FUNCTIONS
@@ -149,7 +198,27 @@ namespace CS3358_FA2024_A7
    //       NOTE: All existing items in the p_queue are preserved and
    //             used remains unchanged.
    {
-      cerr << "resize(size_type) not implemented yet" << endl;
+      if(new_capacity == capacity)
+         return;
+
+      
+      if(new_capacity < used)
+         new_capacity = used;
+      
+      
+      ItemType* newHeap = new ItemType[new_capacity];
+
+      for(size_type i = 0; i < used; i++)
+      {
+         newHeap[i] = heap[i];
+      }
+
+      delete [] heap;
+      heap = newHeap;
+
+      capacity = new_capacity;
+      
+      // cerr << "resize(size_type) not implemented yet" << endl;
    }
 
    bool p_queue::is_leaf(size_type i) const
@@ -157,7 +226,15 @@ namespace CS3358_FA2024_A7
    // Post: If the item at heap[i] has no children, true has been
    //       returned, otherwise false has been returned.
    {
-      cerr << "is_leaf(size_type) not implemented yet" << endl;
+      assert (i < used);
+
+      size_type left = 2 * i + 1;
+      size_type right = 2 * i + 2;
+
+      if( left >= used && right >= used)
+         return true;
+
+      // cerr << "is_leaf(size_type) not implemented yet" << endl;
       return false; // dummy return value
    }
 
@@ -167,8 +244,13 @@ namespace CS3358_FA2024_A7
    // Post: The index of "the parent of the item at heap[i]" has
    //       been returned.
    {
-      cerr << "parent_index(size_type) not implemented yet" << endl;
-      return 0; // dummy return value
+      assert (i > 0);
+      assert (i < used);
+
+      return (i - 1) / 2;
+
+      // cerr << "parent_index(size_type) not implemented yet" << endl;
+      // return 0; // dummy return value
    }
 
    p_queue::size_type
@@ -177,8 +259,13 @@ namespace CS3358_FA2024_A7
    // Post: The priority of "the parent of the item at heap[i]" has
    //       been returned.
    {
-      cerr << "parent_priority(size_type) not implemented yet" << endl;
-      return 0; // dummy return value
+      assert (i > 0);
+      assert (i < used);
+
+      return heap[parent_index(i)].priority;
+
+      // cerr << "parent_priority(size_type) not implemented yet" << endl;
+      // return 0; // dummy return value
    }
 
    p_queue::size_type
@@ -189,8 +276,24 @@ namespace CS3358_FA2024_A7
    //       (The bigger child is the one whose priority is no smaller
    //       than that of the other child, if there is one.)
    {
-      cerr << "big_child_index(size_type) not implemented yet" << endl;
-      return 0; // dummy return value
+      assert (is_leaf(i) == false);
+
+      size_type left = 2 * i + 1;
+      size_type right = 2 * i + 2;
+      
+      // if right is null / oob?
+      if( right >= used )
+         return left;
+
+      // // if right null
+      // if(heap[right] == 0)
+      //    return left;
+
+      // return bigger of them
+      return heap[left].priority >= heap[right].priority ? left : right;
+
+      // cerr << "big_child_index(size_type) not implemented yet" << endl;
+      // return 0; // dummy return value
    }
 
    p_queue::size_type
@@ -201,15 +304,27 @@ namespace CS3358_FA2024_A7
    //       (The bigger child is the one whose priority is no smaller
    //       than that of the other child, if there is one.)
    {
-      cerr << "big_child_priority(size_type) not implemented yet" << endl;
-      return 0; // dummy return value
+      assert (is_leaf(i) == false);
+
+      return heap[big_child_index(i)].priority;
+
+      // cerr << "big_child_priority(size_type) not implemented yet" << endl;
+      // return 0; // dummy return value
    }
 
    void p_queue::swap_with_parent(size_type i)
    // Pre:  (i > 0) && (i < used)
    // Post: The item at heap[i] has been swapped with its parent.
    {
-      cerr << "swap_with_parent(size_type) not implemented yet" << endl;
+      assert(i > 0);
+      assert (i < used);   
+      
+      size_type parent_idx = parent_index(i);
+      ItemType temp = heap[i];
+      heap[i] = heap[parent_idx];
+      heap[parent_idx] = temp;
+
+      // cerr << "swap_with_parent(size_type) not implemented yet" << endl;
    }
 }
 
